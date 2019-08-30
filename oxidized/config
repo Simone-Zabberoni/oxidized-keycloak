@@ -1,0 +1,51 @@
+---
+username: manager
+password: f00bar
+model: procurve
+interval: 600
+log: ~/.config/oxidized/log
+use_syslog: false
+debug: false
+threads: 30
+timeout: 20
+retries: 3
+prompt: !ruby/regexp /^([\w.@-]+[#>]\s?)$/
+pid: "/root/.config/oxidized/pid"
+
+vars:
+  enable: v3ry5ecur3
+  remove_secret: true
+
+rest: 0.0.0.0:8888
+
+groups: {}
+
+input:
+  default: ssh, telnet
+  debug: false
+  ssh:
+    secure: false
+
+output:
+  default: file
+  file:
+    directory: "/root/.config/oxidized/configs"
+
+source:
+  default: csv
+  csv:
+    file: "/root/.config/oxidized/router.db"
+    delimiter: !ruby/regexp /:/
+    map:
+      name: 0
+      model: 1
+      username: 2
+      password: 3
+    vars_map:
+      enable: 4
+
+model_map:
+  cisco: ios
+  juniper: junos
+
+

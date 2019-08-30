@@ -1,0 +1,95 @@
+version: "3"
+
+services:
+  nginx-proxy:
+    # https://github.com/jwilder/nginx-proxy
+    restart: always
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - nginx-proxy-certs:/etc/nginx/certs
+      - nginx-proxy-html:/usr/share/nginx/html
+
+    environment:
+      DEFAULT_HOST: ${DEFAULT_HOST}
+
+  mysql:
+    restart: always
+    image: mysql:5.7
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${KEYCLOAK_MYSQL_DATABASE}
+      MYSQL_USER: ${KEYCLOAK_MYSQL_USER}
+      MYSQL_PASSWORD: ${KEYCLOAK_MYSQL_PASSWORD}
+
+  keycloak:
+    restart: always
+    image: ${KEYCLOAK_IMAGE}
+    environment:
+      VIRTUAL_HOST: ${KEYCLOAK_WEB_HOST}
+      VIRTUAL_PORT: ${KEYCLOAK_PORT}
+      DB_VENDOR: MYSQL
+      DB_ADDR: mysql
+      DB_DATABASE: ${KEYCLOAK_MYSQL_DATABASE}
+      DB_USER: ${KEYCLOAK_MYSQL_USER}
+      DB_PASSWORD: ${KEYCLOAK_MYSQL_PASSWORD}
+      KEYCLOAK_USER: ${KEYCLOAK_USER}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_PASSWORD}
+    command:
+      - "-Dkeycloak.import=/opt/jboss/keycloak/zabrealm.json"
+    depends_on:
+      - mysql
+
+  keycloak-gatekeeper:
+    restart: always
+    depends_on:
+      - keycloak
+    image: keycloak/keycloak-gatekeeper:latest
+    ports:
+      - "3000"
+
+    environment:
+      VIRTUAL_HOST: ${GATEKEEPER_WEB_HOST}
+      VIRTUAL_PORT: ${GATEKEEPER_PORT}
+      PROXY_LISTEN: ${GATEKEEPER_PROXY_LISTEN}
+      PROXY_DISCOVERY_URL: ${GATEKEEPER_PROXY_DISCOVERY_URL}
+      PROXY_CLIENT_ID: ${GATEKEEPER_PROXY_CLIENT_ID}
+      PROXY_CLIENT_SECRET: ${GATEKEEPER_PROXY_CLIENT_SECRET}
+      PROXY_UPSTREAM_URL: ${GATEKEEPER_PROXY_UPSTREAM_URL}
+
+    command:
+      #- "--verbose"
+      - "--enable-refresh-tokens=true"
+      - "--enable-default-deny=true"
+      - "--resources=uri=/*"
+      - "--enable-session-cookies=true"
+      - "--encryption-key=${GATEKEEPER_PROXY_CLIENT_ENCRYPT}"
+      - "--secure-cookie=${GATEKEEPER_PROXY_SECURE_COOKIE}"
+
+    # For manual resolution - single host dev mode
+    extra_hosts:
+      - "${KEYCLOAK_WEB_HOST}:${DOCKER_IP}"
+
+  oxidized:
+    restart: always
+    image: ${OXIDIZED_IMAGE}
+
+    environment:
+      CONFIG_RELOAD_INTERVAL: ${OXIDIZED_CONFIG_RELOAD_INTERVAL}
+    volumes:
+      - oxidized-storage:/root/.config/oxidized
+
+volumes:
+  mysql-data:
+    driver: local
+  oxidized-storage:
+    driver: local
+  nginx-proxy-certs:
+    driver: local
+  nginx-proxy-html:
+    driver: local

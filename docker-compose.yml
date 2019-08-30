@@ -41,7 +41,7 @@ services:
       KEYCLOAK_USER: ${KEYCLOAK_USER}
       KEYCLOAK_PASSWORD: ${KEYCLOAK_PASSWORD}
     command:
-      - "-Dkeycloak.import=/opt/jboss/keycloak/zabrealm.json"
+      - "-Dkeycloak.import=/opt/jboss/keycloak/OxidizedRealm.json"
     depends_on:
       - mysql
 

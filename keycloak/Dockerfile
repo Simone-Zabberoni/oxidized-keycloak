@@ -1,10 +1,11 @@
 # Keycloak with working realm and client for oxidized
+# 0.2
 
 FROM jboss/keycloak
 LABEL maintainer="simone.zabberoni@gmail.com"
 LABEL description="Keycloak with working realm and client for oxidized"
 
-COPY zabrealm.json /opt/jboss/keycloak/zabrealm.json
+COPY OxidizedRealm.json /opt/jboss/keycloak/OxidizedRealm.json
 
 
 
